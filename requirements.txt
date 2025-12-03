@@ -1,0 +1,5 @@
+Django
+djangorestframework
+python-dotenv
+psycopg2-binary
+dj_database_url
