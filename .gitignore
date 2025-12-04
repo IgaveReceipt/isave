@@ -14,6 +14,17 @@ venv/
 *.sqlite3
 media/
 static/
+staticfiles/
+db.sqlite3
+
+# Node
+node_modules/
+.next/
+out/
+build/
+dist/
+*.lock
+package-lock.json
 
 # IDEs
 .idea/
@@ -21,3 +32,8 @@ static/
 
 # OS
 .DS_Store
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/

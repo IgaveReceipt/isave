@@ -68,10 +68,85 @@ npm run dev
 ```
 The frontend application will be available at `http://localhost:3000`.
 
+## 🧪 Testing
+
+### Backend Tests
+```bash
+cd backend
+source venv/bin/activate
+
+# Run all tests with pytest
+pytest -v
+
+# Run Django tests
+python manage.py test
+
+# Check code quality
+flake8
+```
+
+### Frontend Tests
+```bash
+cd frontend/igave_receipts
+
+# Build for production
+npm run build
+
+# Security audit
+npm audit
+```
+
+### Pre-Deployment Check
+Run the comprehensive pre-deployment script:
+```bash
+./scripts/pre-deploy-check.sh
+```
+
+## 📡 API Endpoints
+
+The backend provides the following REST API endpoints:
+
+### Authentication
+- `POST /api/token/` - Obtain JWT token pair
+- `POST /api/token/refresh/` - Refresh access token
+
+### Users
+- `GET /api/users/` - List users (authenticated)
+- `GET /api/users/me/` - Get current user info
+
+### Receipts
+- `GET /api/receipts/` - List user's receipts
+- `POST /api/receipts/` - Create new receipt
+- `GET /api/receipts/{id}/` - Get receipt details
+- `PUT /api/receipts/{id}/` - Update receipt
+- `DELETE /api/receipts/{id}/` - Delete receipt
+
+## 🚀 Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions for:
+- Heroku
+- Railway
+- DigitalOcean
+- Vercel (Frontend)
+
+## 📊 Project Status
+
+- ✅ Backend API with Django REST Framework
+- ✅ JWT Authentication
+- ✅ Receipt CRUD operations
+- ✅ User isolation and permissions
+- ✅ Comprehensive test suite (9 tests passing)
+- ✅ Code linting with flake8
+- ✅ CI/CD with GitHub Actions
+- ✅ Production-ready settings
+- ✅ Security configurations
+- 🔄 Frontend UI (in development)
+
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Run tests (`./scripts/pre-deploy-check.sh`)
+4. Commit your changes (`git commit -m 'Add some amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
