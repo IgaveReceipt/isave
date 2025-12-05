@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* Light mode */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  --dark-start: #000000;
+  --dark-mid: #1a1a1a;
+  --dark-end: #333333;
+}
+
+/* Dark mode enabled */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #e5e5e5;
+
+  --dark-start: #000000;
+  --dark-mid: #1c1c1c;
+  --dark-end: #323232;
+}
+
+/* Apply theme colors */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
