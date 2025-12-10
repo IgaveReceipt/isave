@@ -1,0 +1,32 @@
+name: Gemini AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize] # Runs automatically when PR is opened or new commits are pushed
+  issue_comment:
+    types: [created]
+
+jobs:
+  review:
+    # Check for manual trigger: a comment containing '/gemini-review'
+    if: |
+      github.event_name == 'pull_request' || 
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/gemini-review') && github.event.issue.pull_request)
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # This permission is CRITICAL for the Action to post comments
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4 
+        with:
+          fetch-depth: 0 # Needed to get the full diff
+
+      - name: Run Gemini Review
+        uses: sshnaidm/gemini-code-review-action@v1 # A simple, well-documented Action
+        with:
+          gemini-key: ${{ secrets.GEMINI_API_KEY }} # Uses your private, free API key
+          github-token: ${{ secrets.GITHUB_TOKEN }} # The default token provided by GitHub
+          model: "gemini-2.5-flash" # The fastest and cheapest model
