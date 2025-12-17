@@ -1,13 +1,14 @@
 # backend/igaveapp/ocr.py
 import os
 import io
-import re 
+import re
 import json
 from google.oauth2 import service_account
 from google.cloud import vision
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 def extract_receipt_data(file_path):
     """
@@ -28,7 +29,7 @@ def extract_receipt_data(file_path):
             # 2. FALLBACK: Check for local file (Development only)
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             creds_path = os.path.join(base_dir, "google_credentials.json")
-            
+
             if os.path.exists(creds_path):
                 print(f"📂 Loading Google Credentials from file: {creds_path}")
                 client = vision.ImageAnnotatorClient.from_service_account_json(creds_path)
@@ -47,8 +48,7 @@ def extract_receipt_data(file_path):
         # 4. SEND TO GOOGLE (TEXT_DETECTION) ☁️
         response = client.text_detection(image=image)
         texts = response.text_annotations
-        
-        
+
         if not texts:
             print("❌ No text found in image.")
             return None
@@ -58,14 +58,14 @@ def extract_receipt_data(file_path):
 
         # 5. PARSE THE DATA (THE HARD PART) 🕵️‍♂️
         # Since Google doesn't know what a 'Total' is, we have to find it ourselves.
-        
+
         data = {
             "vendor": parse_vendor(texts),     # Guess the store name
             "date": parse_date(full_text),     # Find a date pattern
             "total": parse_total(full_text),   # Find the biggest money number
             "category": "Uncategorized"        # Google won't tell us this :(
         }
-        
+
         return data
 
     except Exception as e:
@@ -84,10 +84,11 @@ def parse_vendor(texts):
         # We might grab the first valid line that isn't a number.
         lines = texts[0].description.split('\n')
         if lines:
-            return lines[0].strip() # First line is usually the store name (e.g., "Walmart")
+            return lines[0].strip()  # First line is usually the store name (e.g., "Walmart")
         return "Unknown Vendor"
-    except:
+    except BaseException:
         return None
+
 
 def parse_date(text):
     """
@@ -110,6 +111,7 @@ def parse_date(text):
         return match.group(0)
     return None
 
+
 def parse_total(text):
     """
     Finds the word 'Total' (or 'Amount') and looks for the number next to it.
@@ -119,16 +121,16 @@ def parse_total(text):
     total_pattern = r'(?i)(total|balance|amount|due)[\s:$]*(\d{1,5}\.\d{2})'
     match = re.search(total_pattern, text)
     if match:
-        return match.group(2) # The number part
+        return match.group(2)  # The number part
 
     # 2. Fallback: Find ALL money-looking numbers (e.g., 12.99) and take the biggest one.
     # This is a hack, but it works 80% of the time for receipts.
     money_pattern = r'\b\d{1,5}\.\d{2}\b'
     amounts = re.findall(money_pattern, text)
-    
+
     if amounts:
         # Convert strings to floats to compare
         valid_amounts = [float(a) for a in amounts]
-        return max(valid_amounts) # Return the largest amount found
-        
+        return max(valid_amounts)  # Return the largest amount found
+
     return None
