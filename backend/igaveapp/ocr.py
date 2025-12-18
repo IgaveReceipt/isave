@@ -10,6 +10,7 @@ from datetime import datetime
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+
 def extract_receipt_data(file_path):
     """
     Scans a receipt using Google Cloud Vision API and 'guesses' the data.
