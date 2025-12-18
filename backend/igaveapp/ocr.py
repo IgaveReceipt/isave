@@ -61,10 +61,10 @@ def extract_receipt_data(file_path):
 
         # 5. PARSE THE DATA 🕵️‍♂️
         data = {
-            "vendor": parse_vendor(texts),
-            "date": parse_date(full_text),
-            "total": parse_total(full_text),
-            "category": "Uncategorized"
+            "vendor": parse_vendor(texts),     # Guess the store name
+            "date": parse_date(full_text),     # Find a date pattern
+            "total": parse_total(full_text),   # Find the biggest money number
+            "category": "Uncategorized"        # Google won't tell us this :(
         }
 
         return data
