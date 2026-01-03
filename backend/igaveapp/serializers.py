@@ -15,5 +15,16 @@ class ReceiptSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Receipt
-        fields = ['id', 'user', 'store_name', 'date', 'total_amount', 'created_at']
+        # Added 'category', 'items', and 'status'
+        fields = [
+            'id', 
+            'user', 
+            'store_name', 
+            'date', 
+            'total_amount', 
+            'category', 
+            'items', 
+            'status', 
+            'created_at'
+        ]
         read_only_fields = ['id', 'created_at']

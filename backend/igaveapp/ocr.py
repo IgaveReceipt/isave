@@ -14,6 +14,7 @@ def extract_receipt_data(file_path):
     - Vendor (Store Name)
     - Date (US & EU formats)
     - Total Amount
+    - Category (Food, Transport, etc.)
     """
     client = None
 
@@ -65,6 +66,7 @@ def extract_receipt_data(file_path):
         "vendor": None,
         "date": None,
         "total": None,
+        "category": "general", # Default value
         "items": [] 
     }
 
@@ -73,7 +75,6 @@ def extract_receipt_data(file_path):
     total_pattern = r'(?i)(total|amount|balance|due|grand total)\s*[:$]?\s*(\d+[.,]\d{2})'
     
     # NEW: Item Pattern (Text followed by a price at the end of the line)
-    # Looks for: "Cheese Burger   10.50" or "Coffee 4,50"
     item_pattern = r'(.+?)\s+(\d+[.,]\d{2})$'
 
     # Words to ignore when looking for items
@@ -111,38 +112,27 @@ def extract_receipt_data(file_path):
                 data['total'] = str(max(floats))
             except: pass
 
-    # ... (Keep Sections A, B, and C the same) ...
-
     # --- D. EXECUTE ITEM SEARCH (THE MATCHMAKER FIX) 💘 ---
     print("\n🐢 --- DEBUG: MATCHMAKER MODE ---")
     
-    # Pattern 1: One Line (Text ... Price)
-    # e.g. "Burger 10.50"
     single_line_pattern = r'(.+?)\s+[$]?(\d+[.,]\d{2})$'
-
-    # Pattern 2: Price Line (Just a price)
-    # e.g. "$10.50" or "10.50"
     price_only_pattern = r'^[$]?\s*(\d+[.,]\d{2})$'
 
     i = 0
     while i < len(lines):
         line = lines[i].strip()
-        
-        # Skip garbage
         if not line:
             i += 1
             continue
 
         print(f"Line {i}: '{line}'", end=" ... ")
 
-        # --- CHECK 1: Is it a "Single Line" Item? ---
-        # (e.g. "Burger 10.50")
+        # Check 1: Single Line Item
         match = re.search(single_line_pattern, line)
         if match:
             item_name = match.group(1).strip()
             item_price = match.group(2).replace(',', '.')
             
-            # Validation
             if any(bad in item_name.lower() for bad in blacklist_words):
                 print("❌ Ignored (Blacklist)")
             elif data['date'] and data['date'] in item_name:
@@ -150,40 +140,88 @@ def extract_receipt_data(file_path):
             else:
                 print(f"✅ MATCH (Single Line)! {item_name} -> {item_price}")
                 data['items'].append({"name": item_name, "price": float(item_price)})
-            
             i += 1
             continue
 
-        # --- CHECK 2: Is it a "Split Line" Item? ---
-        # (Current line is Name, NEXT line is Price)
+        # Check 2: Split Line Item
         if i + 1 < len(lines):
             next_line = lines[i+1].strip()
             price_match = re.match(price_only_pattern, next_line)
             
             if price_match:
-                # We found a potential match!
                 item_name = line
                 item_price = price_match.group(1).replace(',', '.')
                 
-                # Validation
                 if any(bad in item_name.lower() for bad in blacklist_words):
-                    print("❌ Ignored (Blacklist) - skipping next line too")
+                    print("❌ Ignored (Blacklist)")
                 elif re.match(r'^[\d\W]+$', item_name): 
-                    # If name is just numbers/symbols (like "1"), ignore it
                     print("❌ Ignored (Just Numbers)")
-                    # NOTE: We do NOT skip the next line here, because "1" might be quantity 
-                    # and the REAL item might be on the next line.
                     i += 1
                     continue 
                 else:
                     print(f"✅ MATCH (Split Line)! {item_name} -> {item_price}")
                     data['items'].append({"name": item_name, "price": float(item_price)})
-                    i += 2 # Skip BOTH lines (Name and Price)
+                    i += 2 
                     continue
 
         print("❌ No match")
         i += 1
 
     print("🐢 --- END DEBUG ---\n")
+
+    # --- E. INTELLIGENT CATEGORIZATION 🧠 ---
+    # UPDATED: More brands, better keywords, safer logic.
+    categories = {
+        'food': [
+            'burger', 'pizza', 'restaurant', 'cafe', 'coffee', 'grill', 'kitchen', 'food', 'market', 
+            'diner', 'bistro', 'steak', 'mcdonalds', 'kfc', 'starbucks', 'subway', 'wendys', 'taco bell',
+            'dunkin', 'chipotle', 'domino', 'meal', 'bread', 'bakery', 'sushi'
+        ],
+        'transport': [
+            'uber', 'lyft', 'taxi', 'shell', 'exxon', 'bp', 'chevron', 'fuel', 'gas', 'station', 
+            'train', 'metro', 'bus', 'airline', 'flight', 'parking', 'garage'
+        ],
+        'utilities': [
+            'water', 'electric', 'power', 'energy', 'internet', 'wifi', 'telecom', 'mobile', 
+            'at&t', 'verizon', 't-mobile', 'comcast', 'bill', 'insurance'
+        ],
+        'shopping': [
+            'amazon', 'walmart', 'target', 'ikea', 'mall', 'shop', 'clothing', 'shoes', 'apparel',
+            'nike', 'adidas', 'zara', 'h&m', 'retail', 'outlet', 'boutique', 'book'
+        ],
+        # Removed 'store' from shopping because it's too generic!
+        
+        'entertainment': [
+            'cinema', 'movie', 'theatre', 'netflix', 'spotify', 'ticket', 'event', 'bowling', 
+            'golf', 'game', 'concert', 'museum'
+        ],
+        'health': [
+            'pharmacy', 'cvs', 'walgreens', 'hospital', 'clinic', 'doctor', 'dental', 'gym', 
+            'fitness', 'medicine', 'drug'
+        ]
+    }
+
+    # Helper to check text against keywords
+    def check_category(text):
+        if not text: return None
+        text = text.lower()
+        
+        # Check explicit keywords
+        for cat, keywords in categories.items():
+            if any(keyword in text for keyword in keywords):
+                return cat
+        return None
+
+    # 1. Check Vendor First (High Priority)
+    cat_match = check_category(data['vendor'])
+    
+    # 2. If no vendor match, check the first few items
+    if not cat_match:
+        for item in data['items'][:5]: # Check first 5 items
+            cat_match = check_category(item['name'])
+            if cat_match: break
+    
+    if cat_match:
+        data['category'] = cat_match
 
     return data

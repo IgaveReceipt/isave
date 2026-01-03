@@ -1,7 +1,7 @@
 import os
 import tempfile
 from django.contrib.auth.models import User
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters  # Added filters here
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -27,6 +27,12 @@ class ReceiptViewSet(viewsets.ModelViewSet):
     serializer_class = ReceiptSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
+    
+    # --- 1. ENABLE SORTING 📂 ---
+    # This allows the frontend to call: /api/receipts/?ordering=-created_at
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['created_at', 'date', 'total_amount']
+    ordering = ['-created_at']  # Default: Newest scanned first
 
     def get_queryset(self):
         return Receipt.objects.filter(user=self.request.user)
@@ -34,7 +40,7 @@ class ReceiptViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-    # --- THE NEW "ANALYSIS" BRIDGE ---
+    # --- THE ANALYSIS BRIDGE ---
     @action(detail=False, methods=['post'], url_path='scan')
     def analyze_receipt(self, request):
         """
@@ -67,16 +73,20 @@ class ReceiptViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # D. Construct the Draft Data (Map to DB fields for Frontend convenience)
+            # D. Construct the Draft Data
             draft_data = {
                 "store_name": data.get('vendor') or "Unknown Vendor",
                 "date": data.get('date'),
                 "total_amount": data.get('total'),
                 "items": data.get('items', []),
+                
+                # --- 2. PASS THE CATEGORY TO FRONTEND 🧠 ---
+                "category": data.get('category'), 
+                
                 "status": "pending" 
             }
             
-            print(f"✅ Analysis Complete. Sending draft to frontend.")
+            print(f"✅ Analysis Complete. Draft Category: {draft_data['category']}")
 
             # E. Return the RAW data (No ID, not saved yet)
             return Response(draft_data, status=status.HTTP_200_OK)
