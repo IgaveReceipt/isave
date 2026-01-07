@@ -15,7 +15,6 @@ class ReceiptSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Receipt
-        # Added 'category', 'items', and 'status'
         fields = [
             'id', 
             'user', 

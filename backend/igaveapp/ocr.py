@@ -18,7 +18,7 @@ def extract_receipt_data(file_path):
     """
     client = None
 
-    # --- 1. SETUP GOOGLE CLIENT 🤖 ---
+    # --- 1. SETUP GOOGLE CLIENT ---
     try:
         # Check environment variable first (Production / Secure)
         google_json_str = os.environ.get("GOOGLE_CREDENTIALS_JSON")
@@ -33,13 +33,13 @@ def extract_receipt_data(file_path):
             if os.path.exists(creds_path):
                 client = vision.ImageAnnotatorClient.from_service_account_json(creds_path)
             else:
-                print("❌ OCR Error: No Google Credentials found.")
+                print(" OCR Error: No Google Credentials found.")
                 return None
     except Exception as e:
-        print(f"❌ OCR Client Setup Error: {e}")
+        print(f" OCR Client Setup Error: {e}")
         return None
 
-    # --- 2. CALL VISION API 👁️ ---
+    # --- 2. CALL VISION API  ---
     try:
         with io.open(file_path, 'rb') as image_file:
             content = image_file.read()
@@ -49,7 +49,7 @@ def extract_receipt_data(file_path):
         response = client.text_detection(image=image)
         
         if not response.text_annotations:
-            print("⚠️ OCR: No text found in image.")
+            print(" OCR: No text found in image.")
             return None
 
         # The first annotation contains the entire text
@@ -57,10 +57,10 @@ def extract_receipt_data(file_path):
         lines = full_text.split('\n')
         
     except Exception as e:
-        print(f"❌ OCR Processing Error: {e}")
+        print(f" OCR Processing Error: {e}")
         return None
 
-    # --- 3. SMART EXTRACTION LOGIC 🧠 ---
+    # --- 3. SMART EXTRACTION LOGIC  ---
     
     data = {
         "vendor": None,
@@ -112,8 +112,8 @@ def extract_receipt_data(file_path):
                 data['total'] = str(max(floats))
             except: pass
 
-    # --- D. EXECUTE ITEM SEARCH (THE MATCHMAKER FIX) 💘 ---
-    print("\n🐢 --- DEBUG: MATCHMAKER MODE ---")
+    # --- D. EXECUTE ITEM SEARCH (THE MATCHMAKER FIX)  ---
+    print("\n --- DEBUG: MATCHMAKER MODE ---")
     
     single_line_pattern = r'(.+?)\s+[$]?(\d+[.,]\d{2})$'
     price_only_pattern = r'^[$]?\s*(\d+[.,]\d{2})$'
@@ -134,11 +134,11 @@ def extract_receipt_data(file_path):
             item_price = match.group(2).replace(',', '.')
             
             if any(bad in item_name.lower() for bad in blacklist_words):
-                print("❌ Ignored (Blacklist)")
+                print(" Ignored (Blacklist)")
             elif data['date'] and data['date'] in item_name:
-                print("❌ Ignored (Date)")
+                print(" Ignored (Date)")
             else:
-                print(f"✅ MATCH (Single Line)! {item_name} -> {item_price}")
+                print(f" MATCH (Single Line)! {item_name} -> {item_price}")
                 data['items'].append({"name": item_name, "price": float(item_price)})
             i += 1
             continue
@@ -153,24 +153,23 @@ def extract_receipt_data(file_path):
                 item_price = price_match.group(1).replace(',', '.')
                 
                 if any(bad in item_name.lower() for bad in blacklist_words):
-                    print("❌ Ignored (Blacklist)")
+                    print(" Ignored (Blacklist)")
                 elif re.match(r'^[\d\W]+$', item_name): 
-                    print("❌ Ignored (Just Numbers)")
+                    print(" Ignored (Just Numbers)")
                     i += 1
                     continue 
                 else:
-                    print(f"✅ MATCH (Split Line)! {item_name} -> {item_price}")
+                    print(f" MATCH (Split Line)! {item_name} -> {item_price}")
                     data['items'].append({"name": item_name, "price": float(item_price)})
                     i += 2 
                     continue
 
-        print("❌ No match")
+        print(" No match")
         i += 1
 
-    print("🐢 --- END DEBUG ---\n")
+    print(" --- END DEBUG ---\n")
 
-    # --- E. INTELLIGENT CATEGORIZATION 🧠 ---
-    # UPDATED: More brands, better keywords, safer logic.
+    # --- E. INTELLIGENT CATEGORIZATION  ---
     categories = {
         'food': [
             'burger', 'pizza', 'restaurant', 'cafe', 'coffee', 'grill', 'kitchen', 'food', 'market', 
@@ -189,7 +188,6 @@ def extract_receipt_data(file_path):
             'amazon', 'walmart', 'target', 'ikea', 'mall', 'shop', 'clothing', 'shoes', 'apparel',
             'nike', 'adidas', 'zara', 'h&m', 'retail', 'outlet', 'boutique', 'book'
         ],
-        # Removed 'store' from shopping because it's too generic!
         
         'entertainment': [
             'cinema', 'movie', 'theatre', 'netflix', 'spotify', 'ticket', 'event', 'bowling', 

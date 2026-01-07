@@ -1,9 +1,12 @@
 import os
+import csv
 import tempfile
+from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.db.models import Sum
 from rest_framework import viewsets, status, filters
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -33,8 +36,6 @@ class UserViewSet(viewsets.ModelViewSet):
 class ReceiptViewSet(viewsets.ModelViewSet):
     serializer_class = ReceiptSerializer
     permission_classes = [IsAuthenticated]
-
-    # Allow JSONParser so we can send text edits
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     filter_backends = [filters.OrderingFilter]
@@ -80,11 +81,11 @@ class ReceiptViewSet(viewsets.ModelViewSet):
                 "status": "pending"
             }
 
-            print(f"✅ Analysis Complete. Draft Category: {draft_data['category']}")
+            print(f" Analysis Complete. Draft Category: {draft_data['category']}")
             return Response(draft_data, status=status.HTTP_200_OK)
 
         except Exception as e:
-            print(f"❌ Error in analyze_receipt: {e}")
+            print(f" Error in analyze_receipt: {e}")
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -102,6 +103,9 @@ class ReceiptViewSet(viewsets.ModelViewSet):
         """
         queryset = self.get_queryset()
 
+    @action(detail=False, methods=['get'], url_path='stats')
+    def get_stats(self, request):
+        queryset = self.get_queryset()
         month = request.query_params.get('month')
         year = request.query_params.get('year')
 
@@ -124,7 +128,6 @@ class ReceiptViewSet(viewsets.ModelViewSet):
                 cat_name = "Uncategorized"
 
             amount = entry['total'] or 0
-
             labels.append(cat_name)
             values.append(amount)
             grand_total += amount
@@ -135,3 +138,33 @@ class ReceiptViewSet(viewsets.ModelViewSet):
             "total_spent": grand_total,
             "filter": f"Month: {month}, Year: {year}" if month else "All Time"
         })
+
+    # --- DATA EXPORT (CSV) ---
+    @action(detail=False, methods=['get'], url_path='export')
+    def export_csv(self, request):
+        """
+        Endpoint: GET /api/receipts/export/
+        Returns: A CSV file download.
+        """
+        # 1. Create the Response Object (MIME type = CSV)
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="my_expenses.csv"'
+
+        # 2. Create the CSV Writer
+        writer = csv.writer(response)
+
+        # 3. Write the Header Row
+        writer.writerow(['Date', 'Store Name', 'Category', 'Total Amount', 'Status'])
+
+        # 4. Write the Data Rows
+        receipts = self.get_queryset().order_by('-date')
+        for receipt in receipts:
+            writer.writerow([
+                receipt.date,
+                receipt.store_name,
+                receipt.get_category_display(),
+                receipt.total_amount,
+                receipt.status
+            ])
+
+        return response
