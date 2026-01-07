@@ -3,7 +3,7 @@ import tempfile
 from django.contrib.auth.models import User
 from django.db.models import Sum
 from rest_framework import viewsets, status, filters
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -13,13 +13,19 @@ from .serializers import UserSerializer, ReceiptSerializer
 from .ocr import extract_receipt_data
 
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [AllowAny]
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     @action(detail=False, methods=["get"])
     def me(self, request):
+        if request.user.is_anonymous:
+            return Response({"error": "Not authenticated"}, status=401)
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
