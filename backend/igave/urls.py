@@ -21,4 +21,6 @@ urlpatterns = [
     # JWT auth (THIS FIXES CI)
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/login/", TokenObtainPairView.as_view(), name="login"),
+    path("api/register/", UserViewSet.as_view({'post': 'create'}), name="register"), 
 ]
