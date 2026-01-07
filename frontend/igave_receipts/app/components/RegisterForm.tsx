@@ -10,21 +10,38 @@ export default function RegisterForm() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  const handleRegister = async () => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setMessage("");
 
+    const payload = {
+      username: username.trim(),
+      password,
+    };
+
+    try {
     const res = await fetch("http://127.0.0.1:8000/api/register/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
 
     if (res.ok) {
       setMessage("User created successfully!");
       setTimeout(() => router.push("/login"), 1200); // redirect to login
     } else {
-      setMessage(data.error || "Registration failed");
+const errMsg =
+          data?.detail ||
+          data?.error ||
+          (typeof data === "object" ? JSON.stringify(data) : "Registration failed");
+
+
+      setMessage(errMsg);
+      }
+    } catch (err) {
+      setMessage("Network error. Check backend is running.");
     }
   };
 
@@ -90,10 +107,10 @@ export default function RegisterForm() {
       <p className="text-center text-white/70 mt-6">
   Already have an account?
   <a
-    href="/register"
+    href="/login"
     className="ml-1 text-white underline hover:text-pink-200"
   >
-    Register
+    Login
   </a>
 </p>
 

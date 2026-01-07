@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.db.models import Sum
 from rest_framework import viewsets, status, filters
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -15,13 +16,19 @@ from .serializers import UserSerializer, ReceiptSerializer
 from .ocr import extract_receipt_data
 
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [AllowAny]
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     @action(detail=False, methods=["get"])
     def me(self, request):
+        if request.user.is_anonymous:
+            return Response({"error": "Not authenticated"}, status=401)
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
@@ -87,6 +94,14 @@ class ReceiptViewSet(viewsets.ModelViewSet):
         finally:
             if os.path.exists(temp_file_path):
                 os.remove(temp_file_path)
+
+    # --- THE ACCOUNTANT V2 (With Time Filters) ---
+    @action(detail=False, methods=['get'], url_path='stats')
+    def get_stats(self, request):
+        """
+        Endpoint: GET /api/receipts/stats/?month=1&year=2026
+        """
+        queryset = self.get_queryset()
 
     @action(detail=False, methods=['get'], url_path='stats')
     def get_stats(self, request):
