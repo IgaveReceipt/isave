@@ -6,7 +6,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-from igaveapp.views import UserViewSet, ReceiptViewSet
+from igaveapp.views import UserViewSet, ReceiptViewSet, CustomTokenObtainPairView
 
 router = DefaultRouter()
 router.register(r"users", UserViewSet, basename="user")
@@ -21,6 +21,6 @@ urlpatterns = [
     # JWT auth (THIS FIXES CI)
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path("api/login/", TokenObtainPairView.as_view(), name="login"),
+    path("api/login/", CustomTokenObtainPairView.as_view(), name="login"),
     path("api/register/", UserViewSet.as_view({'post': 'create'}), name="register"), 
 ]

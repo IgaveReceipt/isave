@@ -6,14 +6,19 @@ from django.contrib.auth.models import User
 from django.db.models import Sum
 from rest_framework import viewsets, status, filters
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .models import Receipt
-from .serializers import UserSerializer, ReceiptSerializer
+from .serializers import UserSerializer, ReceiptSerializer, CustomTokenObtainPairSerializer
 from .ocr import extract_receipt_data
+
+# --- Custom Login View ---
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -101,10 +106,6 @@ class ReceiptViewSet(viewsets.ModelViewSet):
         """
         Endpoint: GET /api/receipts/stats/?month=1&year=2026
         """
-        queryset = self.get_queryset()
-
-    @action(detail=False, methods=['get'], url_path='stats')
-    def get_stats(self, request):
         queryset = self.get_queryset()
         month = request.query_params.get('month')
         year = request.query_params.get('year')
