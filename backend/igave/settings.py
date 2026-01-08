@@ -9,6 +9,11 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# --- Ensure Google Credentials are set in the environment ---
+GOOGLE_APPLICATION_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+if GOOGLE_APPLICATION_CREDENTIALS:
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = GOOGLE_APPLICATION_CREDENTIALS
+
 # secure your secret key
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-key-for-igave-project')
 
