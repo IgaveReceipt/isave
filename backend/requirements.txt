@@ -40,5 +40,5 @@ requests==2.32.5
 rsa==4.9.1
 sqlparse==0.5.4
 typing_extensions==4.15.0
-urllib3==2.6.1
+urllib3==2.6.3
 whitenoise==6.11.0
