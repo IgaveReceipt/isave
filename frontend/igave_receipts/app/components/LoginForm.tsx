@@ -18,10 +18,20 @@ export default function LoginForm() {
     try {
       const data = await login({ username, password });
 
-      localStorage.setItem("username", data.username);
-      localStorage.setItem("is_staff", String(data.is_staff));
+      // 1. Save the keys so the Scan button works!
+      localStorage.setItem("access", data.access);
+      localStorage.setItem("refresh", data.refresh);
 
-      router.push(`/dashboard?user=${username}`);
+      // 2. Find the name inside the new 'user' box
+      if (data.user) {
+        localStorage.setItem("username", data.user.username);
+        localStorage.setItem("is_staff", String(data.user.is_staff));
+      } else {
+        localStorage.setItem("username", username);
+      }
+
+      // 3. Go to Dashboard
+      router.push("/dashboard");
     } catch (error: any) {
       setMessage(error.message || "Login failed");
     }

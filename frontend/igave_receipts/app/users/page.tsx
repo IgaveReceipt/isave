@@ -4,14 +4,33 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function UsersPage() {
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<any[]>([]);
   const router = useRouter();
 
   // Fetch users
   const loadUsers = () => {
-    fetch("http://127.0.0.1:8000/api/users/")
-      .then((res) => res.json())
-      .then((data) => setUsers(data));
+    const token = localStorage.getItem("access"); // 1. Grab the token
+
+    fetch("http://127.0.0.1:8000/api/users/", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`, // 2. Show the token to the backend
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch users");
+        return res.json();
+      })
+      .then((data) => {
+        // 3. Safety Check: Make sure it's actually a list before using .map()
+        if (Array.isArray(data)) {
+          setUsers(data);
+        } else {
+          setUsers([]); 
+        }
+      })
+      .catch((err) => console.error(err));
   };
 
   useEffect(() => {
