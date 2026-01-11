@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Auth UI",
-  description: "Login/Register demo",
+  title: "iSave App",
+  description: "Intelligent Receipt Tracker",
 };
 
 export default function RootLayout({
@@ -23,16 +23,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+    /* 1. className="dark": Forces the app to start in Dark Mode.
+      2. We removed the 'bg-gradient...' classes from the body tag 
+         because globals.css handles it now!
+    */
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body
-  className="
-    min-h-screen 
-    bg-gradient-to-br from-purple-500 via-pink-500 to-fuchsia-600
-    dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-black
-    text-gray-900 dark:text-gray-100
-    transition-all duration-500
-  "
->
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
       </body>
     </html>

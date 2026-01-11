@@ -145,21 +145,29 @@ class ReceiptViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='export')
     def export_csv(self, request):
         """
-        Endpoint: GET /api/receipts/export/
-        Returns: A CSV file download.
+        Endpoint: GET /api/receipts/export/?ids=1,2,3
+        Returns: A CSV file download of SELECTED receipts.
         """
-        # 1. Create the Response Object (MIME type = CSV)
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="my_expenses.csv"'
+        response['Content-Disposition'] = 'attachment; filename="selected_expenses.csv"'
 
-        # 2. Create the CSV Writer
         writer = csv.writer(response)
-
-        # 3. Write the Header Row
         writer.writerow(['Date', 'Store Name', 'Category', 'Total Amount', 'Status'])
 
-        # 4. Write the Data Rows
-        receipts = self.get_queryset().order_by('-date')
+        queryset = self.get_queryset()
+
+        # 1. FILTER: Check if specific IDs were requested
+        ids_param = request.query_params.get('ids')
+        if ids_param:
+            # Convert "1,2,3" string into a list [1, 2, 3]
+            try:
+                id_list = [int(x) for x in ids_param.split(',')]
+                queryset = queryset.filter(id__in=id_list)
+            except ValueError:
+                pass # Ignore bad input, return all (or empty)
+
+        # 2. Export the filtered list
+        receipts = queryset.order_by('-date')
         for receipt in receipts:
             writer.writerow([
                 receipt.date,

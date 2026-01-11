@@ -80,3 +80,37 @@ export const saveReceipt = async (data: ReceiptData) => {
   if (!response.ok) throw new Error("Failed to save receipt");
   return response.json();
 };
+
+export const exportCSV = async (selectedIds?: number[]) => {
+  const token = localStorage.getItem("access");
+  
+  // Build the URL with query params if IDs exist
+  let url = `${API_BASE_URL}/api/receipts/export/`;
+  if (selectedIds && selectedIds.length > 0) {
+    url += `?ids=${selectedIds.join(',')}`;
+  }
+  
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) throw new Error("Failed to download CSV");
+  return response.blob();
+};
+
+export const deleteReceipt = async (id: number) => {
+  const token = localStorage.getItem("access");
+  
+  const response = await fetch(`${API_BASE_URL}/api/receipts/${id}/`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) throw new Error("Failed to delete receipt");
+  return true;
+};
