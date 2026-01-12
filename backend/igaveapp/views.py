@@ -14,6 +14,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import Receipt
 from .serializers import UserSerializer, ReceiptSerializer, CustomTokenObtainPairSerializer
 from .ocr import extract_receipt_data
+import datetime
 
 # --- Custom Login View ---
 
@@ -49,7 +50,41 @@ class ReceiptViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        return Receipt.objects.filter(user=self.request.user)
+        # Start with all receipts for the current user
+        queryset = Receipt.objects.filter(user=self.request.user)
+
+        
+        # 1. Today (?today=true)
+        if self.request.query_params.get('today'):
+            queryset = queryset.filter(date=datetime.date.today())
+
+        # 2. Specific Date (?date=YYYY-MM-DD)
+        date_param = self.request.query_params.get('date')
+        if date_param:
+            queryset = queryset.filter(date=date_param)
+
+        # 3. Month (?month=YYYY-MM)
+        month_param = self.request.query_params.get('month')
+        if month_param:
+            # We assume format is "2026-01"
+            try:
+                y, m = month_param.split('-')
+                queryset = queryset.filter(date__year=y, date__month=m)
+            except ValueError:
+                pass 
+
+        # 4. Year (?year=YYYY)
+        year_param = self.request.query_params.get('year')
+        if year_param:
+            queryset = queryset.filter(date__year=year_param)
+
+        # 5. Range (?start=...&end=...)
+        start_date = self.request.query_params.get('start')
+        end_date = self.request.query_params.get('end')
+        if start_date and end_date:
+            queryset = queryset.filter(date__range=[start_date, end_date])
+
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

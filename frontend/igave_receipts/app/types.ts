@@ -15,3 +15,10 @@ export interface ReceiptData {
   category: Category;
   items?: string[]; // Optional list of items
 }
+
+export interface StatsData {
+  labels: string[];
+  data: number[];
+  total_spent: number;
+  filter: string;
+}

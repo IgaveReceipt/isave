@@ -10,12 +10,20 @@ export type ReceiptItem = {
 
 type RecordsListProps = {
   items: ReceiptItem[];
-  selectedIds: number[];
-  onToggle: (id: number) => void;
-  onDelete: (id: number) => void; // <--- NEW PROP
+  // 1. We make these OPTIONAL with the '?'
+  selectedIds?: number[];
+  onToggle?: (id: number) => void;
+  onDelete?: (id: number) => void; 
 };
 
-export default function RecordsList({ items, selectedIds, onToggle, onDelete }: RecordsListProps) {
+// 2. We provide DEFAULTS in the function signature
+export default function RecordsList({ 
+  items, 
+  selectedIds = [],      // Default: empty list (nothing selected)
+  onToggle = () => {},   // Default: do nothing
+  onDelete = () => {}    // Default: do nothing
+}: RecordsListProps) {
+  
   if (!items.length) {
     return (
       <div className="text-white/60 text-center py-8 bg-white/5 border border-white/10 rounded-xl">
