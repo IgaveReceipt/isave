@@ -1,15 +1,12 @@
 @import "tailwindcss";
 
-/* @theme is a Tailwind v4 feature. 
-  We tell it to use "class" strategy for dark mode (so we can toggle it).
-*/
+/* 🚨 THIS IS THE FIX: Explicitly define what "dark mode" means in v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-display-p3: P3;
 }
 
-/* Here we force the body to ALWAYS have the cool gradient.
-  @apply allows us to use Tailwind classes inside standard CSS.
-*/
 body {
   @apply min-h-screen 
          bg-gradient-to-br from-purple-500 via-pink-500 to-fuchsia-600 

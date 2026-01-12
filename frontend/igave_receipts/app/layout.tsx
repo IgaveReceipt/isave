@@ -23,11 +23,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    /* 1. className="dark": Forces the app to start in Dark Mode.
-      2. We removed the 'bg-gradient...' classes from the body tag 
-         because globals.css handles it now!
+    /* 🚨 CRITICAL FIX: 
+       I removed className="dark" from the <html> tag below.
+       It should just be <html lang="en" ...>
     */
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
       </body>

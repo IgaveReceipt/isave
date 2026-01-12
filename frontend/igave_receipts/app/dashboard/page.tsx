@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import Link from "next/link"; // <--- 1. NEW IMPORT
+import Link from "next/link"; 
 import DashboardLayout from "../components/DashboardLayout";
 import VerifyReceiptForm from "../components/VerifyReceiptForm";
 import RecordsList, { ReceiptItem } from "../components/RecordsList";
 import StatsComponent from "../components/StatsComponent"; 
+import ThemeToggle from "../components/ThemeToggle"; // <--- 1. IMPORT
 import { scanReceipt, exportCSV, deleteReceipt, apiGet } from "../services/api"; 
 import { ReceiptData } from "../types";
 
@@ -112,6 +113,9 @@ export default function DashboardPage() {
   
     return (
       <DashboardLayout>
+        {/* 2. ADD TOGGLE HERE (It floats, so position in JSX doesn't matter much) */}
+        <ThemeToggle />
+
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Welcome, {username} 👋</h1>
@@ -156,7 +160,6 @@ export default function DashboardPage() {
 
         <StatsComponent />
 
-        {/* 🆕 2. TIME TRAVEL NAVIGATION ADDED HERE */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           <Link href="/today" className="bg-white/5 border border-white/10 p-3 rounded-xl text-center hover:bg-white/20 transition">
             <span className="block text-xl">🔥</span>
