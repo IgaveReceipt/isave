@@ -17,8 +17,6 @@ from .ocr import extract_receipt_data
 import datetime
 
 # --- Custom Login View ---
-
-
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
@@ -28,15 +26,10 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
 
     def get_permissions(self):
-        # 1. Anyone can register
         if self.action == 'create':
             return [AllowAny()]
-        
-        # 2. Only Staff can see the list or delete users
         if self.action in ['list', 'destroy']:
             return [IsAdminUser()]
-
-        # 3. For everything else just need to be logged in
         return [IsAuthenticated()]
 
     @action(detail=False, methods=["get"])
@@ -57,9 +50,10 @@ class ReceiptViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        # Start with all receipts for the current user
+        """
+        The Brain: This handles ALL filters for Lists, Stats, and Exports.
+        """
         queryset = Receipt.objects.filter(user=self.request.user)
-
         
         # 1. Today (?today=true)
         if self.request.query_params.get('today'):
@@ -73,7 +67,6 @@ class ReceiptViewSet(viewsets.ModelViewSet):
         # 3. Month (?month=YYYY-MM)
         month_param = self.request.query_params.get('month')
         if month_param:
-            # We assume format is "2026-01"
             try:
                 y, m = month_param.split('-')
                 queryset = queryset.filter(date__year=y, date__month=m)
@@ -100,10 +93,7 @@ class ReceiptViewSet(viewsets.ModelViewSet):
     def analyze_receipt(self, request):
         uploaded_file = request.FILES.get('file')
         if not uploaded_file:
-            return Response(
-                {"error": "No file provided. Send 'file' as form-data."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "No file provided."}, status=400)
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
             for chunk in uploaded_file.chunks():
@@ -115,10 +105,7 @@ class ReceiptViewSet(viewsets.ModelViewSet):
             data = extract_receipt_data(temp_file_path)
 
             if not data:
-                return Response(
-                    {"error": "OCR failed to read the receipt."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"error": "OCR failed."}, status=400)
 
             draft_data = {
                 "store_name": data.get('vendor') or "Unknown Vendor",
@@ -128,36 +115,26 @@ class ReceiptViewSet(viewsets.ModelViewSet):
                 "category": data.get('category'),
                 "status": "pending"
             }
-
-            print(f" Analysis Complete. Draft Category: {draft_data['category']}")
-            return Response(draft_data, status=status.HTTP_200_OK)
+            return Response(draft_data, status=200)
 
         except Exception as e:
-            print(f" Error in analyze_receipt: {e}")
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"error": str(e)}, status=500)
 
         finally:
             if os.path.exists(temp_file_path):
                 os.remove(temp_file_path)
 
-    # --- THE ACCOUNTANT V2 (With Time Filters) ---
+    # --- THE ACCOUNTANT V2 (Fixed) ---
     @action(detail=False, methods=['get'], url_path='stats')
     def get_stats(self, request):
         """
-        Endpoint: GET /api/receipts/stats/?month=1&year=2026
+        Endpoint: GET /api/receipts/stats/?month=2026-01
+        Now supports ALL filters because it uses self.get_queryset()!
         """
+        # 1. Get the filtered list (This respects Month, Year, Today, etc.)
         queryset = self.get_queryset()
-        month = request.query_params.get('month')
-        year = request.query_params.get('year')
 
-        if month and year:
-            queryset = queryset.filter(date__month=month, date__year=year)
-        elif year:
-            queryset = queryset.filter(date__year=year)
-
+        # 2. Calculate Stats on that list
         stats = queryset.values('category').annotate(total=Sum('total_amount')).order_by('-total')
 
         labels = []
@@ -180,29 +157,26 @@ class ReceiptViewSet(viewsets.ModelViewSet):
             "labels": labels,
             "data": values,
             "total_spent": grand_total,
-            "filter": f"Month: {month}, Year: {year}" if month else "All Time"
+            "filter": "Custom Filter" 
         })
 
     # --- DATA EXPORT (CSV) ---
     @action(detail=False, methods=['get'], url_path='export')
     def export_csv(self, request):
         """
-        Endpoint: GET /api/receipts/export/?ids=1,2,3
-        Returns: A Clean, Formatted CSV.
+        Endpoint: GET /api/receipts/export/?month=2026-01
         """
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="iSave_Report.csv"'
 
         response.write(u'\ufeff'.encode('utf8'))
-
         writer = csv.writer(response)
-        
-        # 1. Headers
         writer.writerow(['Date', 'Store Name', 'Category', 'Amount', 'Status'])
 
+        # 1. Use the shared brain again
         queryset = self.get_queryset()
         
-        # Filter by IDs if provided
+        # Filter by IDs if specifically selected
         ids_param = request.query_params.get('ids')
         if ids_param:
             try:
@@ -214,25 +188,15 @@ class ReceiptViewSet(viewsets.ModelViewSet):
         receipts = queryset.order_by('-date')
         
         for r in receipts:
-            
-            # Date: "24 Nov 2025" (Removed the comma!)
             formatted_date = r.date.strftime("%d %b %Y") if r.date else "N/A"
-            
-            # Money: "$30.00"
             formatted_amount = f"${r.total_amount:.2f}" if r.total_amount else "$0.00"
             
-            # Status: Capitalize properly
-            formatted_status = r.get_status_display() 
-
-            # Category: Readable
-            formatted_category = r.get_category_display()
-
             writer.writerow([
                 formatted_date,
                 r.store_name,
-                formatted_category,
+                r.get_category_display(),
                 formatted_amount,
-                formatted_status
+                r.get_status_display()
             ])
 
         return response
