@@ -181,35 +181,53 @@ class ReceiptViewSet(viewsets.ModelViewSet):
     def export_csv(self, request):
         """
         Endpoint: GET /api/receipts/export/?ids=1,2,3
-        Returns: A CSV file download of SELECTED receipts.
+        Returns: A Clean, Formatted CSV.
         """
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="selected_expenses.csv"'
+        response['Content-Disposition'] = 'attachment; filename="iSave_Report.csv"'
+
+        # 🪄 MAGIC TRICK: Write a BOM (Byte Order Mark) so Excel opens it comfortably
+        response.write(u'\ufeff'.encode('utf8'))
 
         writer = csv.writer(response)
-        writer.writerow(['Date', 'Store Name', 'Category', 'Total Amount', 'Status'])
+        
+        # 1. Headers
+        writer.writerow(['Date', 'Store Name', 'Category', 'Amount', 'Status'])
 
         queryset = self.get_queryset()
-
-        # 1. FILTER: Check if specific IDs were requested
+        
+        # Filter by IDs if provided
         ids_param = request.query_params.get('ids')
         if ids_param:
-            # Convert "1,2,3" string into a list [1, 2, 3]
             try:
                 id_list = [int(x) for x in ids_param.split(',')]
                 queryset = queryset.filter(id__in=id_list)
             except ValueError:
-                pass # Ignore bad input, return all (or empty)
+                pass
 
-        # 2. Export the filtered list
         receipts = queryset.order_by('-date')
-        for receipt in receipts:
+        
+        for r in receipts:
+            # 2. CLEANER DATA (No commas = No ugly quotes)
+            
+            # Date: "24 Nov 2025" (Removed the comma!)
+            formatted_date = r.date.strftime("%d %b %Y") if r.date else "N/A"
+            
+            # Money: "$30.00"
+            formatted_amount = f"${r.total_amount:.2f}" if r.total_amount else "$0.00"
+            
+            # Status: Capitalize properly
+            formatted_status = r.get_status_display() 
+
+            # Category: Readable
+            formatted_category = r.get_category_display()
+
             writer.writerow([
-                receipt.date,
-                receipt.store_name,
-                receipt.get_category_display(),
-                receipt.total_amount,
-                receipt.status
+                formatted_date,
+                r.store_name,
+                formatted_category,
+                formatted_amount,
+                formatted_status
             ])
 
         return response
