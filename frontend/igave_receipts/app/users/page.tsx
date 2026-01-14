@@ -37,19 +37,27 @@ export default function UsersPage() {
     loadUsers();
   }, []);
 
-  // Delete user function
+  // --- UPDATED DELETE FUNCTION ---
   const deleteUser = async (id: number) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this user?");
     if (!confirmDelete) return;
 
-    const res = await fetch(`http://127.0.0.1:8000/api/users/${id}/delete/`, {
+    // 1. Get the token (The "Badge")
+    const token = localStorage.getItem("access");
+
+    // 2. Fix the URL (remove 'delete/') and add the Authorization Header
+    const res = await fetch(`http://127.0.0.1:8000/api/users/${id}/`, {
       method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     });
 
     if (res.ok) {
-      loadUsers(); // refresh list
+      loadUsers(); // refresh list on success
     } else {
-      alert("Failed to delete user.");
+      alert("Failed to delete user. Ensure you have admin privileges.");
     }
   };
 

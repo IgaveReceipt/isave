@@ -28,8 +28,15 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
 
     def get_permissions(self):
+        # 1. Anyone can register
         if self.action == 'create':
             return [AllowAny()]
+        
+        # 2. Only Staff can see the list or delete users
+        if self.action in ['list', 'destroy']:
+            return [IsAdminUser()]
+
+        # 3. For everything else just need to be logged in
         return [IsAuthenticated()]
 
     @action(detail=False, methods=["get"])

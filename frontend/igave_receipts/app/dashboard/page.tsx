@@ -11,6 +11,9 @@ import { ReceiptData } from "../types";
 
 export default function DashboardPage() {
   const [username, setUsername] = useState("");
+  // 1. Add state to hold staff status
+  const [isStaff, setIsStaff] = useState(false); 
+
   const [history, setHistory] = useState<ReceiptItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [draftReceipt, setDraftReceipt] = useState<ReceiptData | null>(null);
@@ -22,7 +25,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const user = localStorage.getItem("username");
+    // 2. Read the badge from storage
+    const staffStatus = localStorage.getItem("is_staff");
+
     if (user) setUsername(user);
+    // 3. Update state if they are staff
+    if (staffStatus === "true") setIsStaff(true);
+
     fetchHistory();
   }, []);
 
@@ -120,6 +129,16 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex gap-3">
+              {/* 4. The Admin Button (Conditionally Rendered) */}
+              {isStaff && (
+                <Link 
+                  href="/users"
+                  className="bg-purple-600 px-4 py-2 rounded-lg font-bold hover:bg-purple-700 transition flex items-center shadow-lg border border-purple-400/30"
+                >
+                  👥 Users
+                </Link>
+              )}
+
               <input type="file" hidden ref={fileInputRef} onChange={handleFileChange} accept="image/*"/>
               
               <button
@@ -159,7 +178,7 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           <Link href="/today" className="bg-white/5 border border-white/10 p-3 rounded-xl text-center hover:bg-white/20 transition">
-            <span className="block text-xl">🔥</span>
+            <span className="block text-xl">📅</span>
             <span className="text-sm font-bold text-white">Today</span>
           </Link>
           <Link href="/day" className="bg-white/5 border border-white/10 p-3 rounded-xl text-center hover:bg-white/20 transition">
@@ -167,11 +186,11 @@ export default function DashboardPage() {
             <span className="text-sm font-bold text-white">Day</span>
           </Link>
           <Link href="/month" className="bg-white/5 border border-white/10 p-3 rounded-xl text-center hover:bg-white/20 transition">
-            <span className="block text-xl">🗓️</span>
+            <span className="block text-xl">📆</span>
             <span className="text-sm font-bold text-white">Month</span>
           </Link>
           <Link href="/year" className="bg-white/5 border border-white/10 p-3 rounded-xl text-center hover:bg-white/20 transition">
-            <span className="block text-xl">📆</span>
+            <span className="block text-xl">🗓️</span>
             <span className="text-sm font-bold text-white">Year</span>
           </Link>
           <Link href="/period" className="bg-white/5 border border-white/10 p-3 rounded-xl text-center hover:bg-white/20 transition">
