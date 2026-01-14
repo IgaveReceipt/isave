@@ -1,20 +1,25 @@
 "use client";
 
+import ThemeToggle from "./ThemeToggle"; 
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col p-4 md:p-6 relative"> {/* Added 'relative' just in case */}
       
-      {/* The Glassy Card Container */}
-      <main className="w-full max-w-lg bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-8 shadow-2xl">
+      {/* 2. ADD THE BUTTON HERE (Absolute position puts it in the top-right corner) */}
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
+
+      <main className="w-full max-w-7xl mx-auto flex-1 bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-6 md:p-8 shadow-2xl">
         {children}
       </main>
 
-      {/* Footer / Copyright */}
-      <footer className="mt-8 text-white/40 text-sm">
+      <footer className="mt-8 text-center text-white/40 text-sm">
         © {new Date().getFullYear()} iSave App
       </footer>
     </div>

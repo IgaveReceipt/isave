@@ -6,7 +6,6 @@ import DashboardLayout from "../components/DashboardLayout";
 import VerifyReceiptForm from "../components/VerifyReceiptForm";
 import RecordsList, { ReceiptItem } from "../components/RecordsList";
 import StatsComponent from "../components/StatsComponent"; 
-import ThemeToggle from "../components/ThemeToggle"; // <--- 1. IMPORT
 import { scanReceipt, exportCSV, deleteReceipt, apiGet } from "../services/api"; 
 import { ReceiptData } from "../types";
 
@@ -113,8 +112,6 @@ export default function DashboardPage() {
   
     return (
       <DashboardLayout>
-        {/* 2. ADD TOGGLE HERE (It floats, so position in JSX doesn't matter much) */}
-        <ThemeToggle />
 
         <div className="flex justify-between items-center mb-6">
           <div>
