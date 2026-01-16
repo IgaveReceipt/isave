@@ -68,8 +68,9 @@ export default function StatsComponent({ query = "" }: Props) {
           </div>
         </div>
 
-        <div className="w-full md:w-2/3 h-64">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="w-full md:w-2/3">
+  <ResponsiveContainer width="100%" height={256}>
+
             <PieChart>
               <Pie
                 data={chartData}
