@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import RecordsList from "../components/RecordsList";
-import { apiGet } from "../services/api";
+import RecordsList from "../../components/RecordsList";
+import { apiGet } from "../../services/api";
+import StatsComponent from "../../components/StatsComponent";
+
 
 type ApiResponse = { results?: any[] } | any[];
 
@@ -55,6 +57,9 @@ useEffect(() => {
       <div className="max-w-4xl mx-auto bg-white/10 border border-white/20 rounded-2xl p-8 backdrop-blur-xl">
         <div className="flex items-center justify-between gap-4 mb-6">
           <h1 className="text-3xl font-bold text-white">Period</h1>
+
+          <StatsComponent query={`start=${start}&end=${end}`} />
+
 
           <div className="flex flex-wrap items-center gap-2">
             <input

@@ -8,7 +8,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col p-4 md:p-6 relative"> {/* Added 'relative' just in case */}
+    <div className="min-h-screen flex flex-col p-4 md:p-6 relative bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
       
       {/* 2. ADD THE BUTTON HERE (Absolute position puts it in the top-right corner) */}
       <div className="absolute top-4 right-4 z-10">
